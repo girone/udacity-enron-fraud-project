@@ -65,6 +65,10 @@ I tested the algorithms with different subsets of these 36 features. I added the
 | 34.| 0.00911576467536 | other | discarded |
 | 35.| 0.00113575916967 | relative_expenses | discarded |
 
+Besides Recursive Feature Elimination, I also experimented with SelectKBest and SelectPercentile (which do basically the same thing, which is selecting a subset of features of a certain size). Both did not perform well with initial guesses, so instead of spending to on a grid search, I used the automated RFECV right away.
+
+What I did not understand completely is that the feature selection always has some randomness in its behavior. Even with a fixed `SEED`, the selected features would differ from time to time. I spent some time debugging the code, but could not find an explanation for this behavior.
+
 Principal component analysis PCA can help to reduce the dimensionality of classification problems, which speeds up training and prediction times of classificators. For some classification algorithms, it also improves the quality of the results. The `poi_id.py` has the option `--perform-PCA` which will transform the selected features and keep only the 75% with highest variance. However, in the present task I could not observe any improvements that would justify the increased preprocessing time.
 
 I would have liked to further the parameters by more elaborate email features. For example, finding the words with highest tf.idf scores among all emails and compare the top 100 words between persons sounds very promising. Another approach would be to look for words with high tf.idf from POIs and then take each word's score directly as new feature. To do that, I would need to come up with a metric to compare these sets of words and incorporate them into the otherwise univariate features. Unfortunately this goes beyond my time frame.
@@ -74,6 +78,10 @@ I would have liked to further the parameters by more elaborate email features. F
 I investigated a multitude of algorithms (see `python poi_id.py --help` on `--algorithm` for a full list) to solve the present task. I did not have the time to tune parameters for each of them, so I discontinued investigating those for which I could not guess good initial parameters within a few tries.
 
 A noteworthy option is `rbf_svc` which employs a Support Vector Machine with a radial basis function, because I could not find a parameter setting which would not result in a classifier that does not discard all POIs.
+
+Of all the algorithms tested, `LinearSVC` and `GradientBoostingClassifier` gave the best results, so I focussed on these two in more detail.
+
+After selecting the algorithm, its hyper-parameters need to be tuned. Hyper-parameters are those which cannot be computed from the data (at least not directly). Parameter tuning can be regarded as the continuation of the algorithm selection, just on a smaller level. Determining and setting ideal hyper-parameters can improve an algorithms performance in terms of accuracy, precision and recall. In other words, with some parameters an algorithm will generalize better than with others.
 
 For the most promising algorithms I performed a search for the best parameters using `GridSearchCV` and the parameter grids in the module `custom_param_grids`.
 
@@ -135,3 +143,9 @@ Besides of evaluating the metrics I did some functional tests for scaling (see `
   a) criterion="friedman_mse", max_depth=8, n_estimators=100, max_features=None, subsample=1.0, loss="deviance"
 
 The best solution has been found with `LinearSVC`. It has an accuracy of ~81% which means it assigns 81 out of 100 data points to the correct class. The precision is 35%, meaning that it out of all persons labelled as POI, 35% are actually POIs. The recall is 50%, which means that of all actual POIs the classifier labels every second correctly as POI.
+
+## Outlook
+
+I would have liked to add some text-based features extracted from the email data. My idea was that maybe POIs use a certain vocabulary more often than non-POIs. To create a feature which expresses this, my approach is to 1) extract for each person the email texts, 2) stem words and remove stop words, 3) vectorize the text and compute tf.idf scores. Then tf.ids scores for POIs are summarized and averaged. Finally, for each person a distance metric between its own scores and the POI average scores be computed. This new feature could be used as input to the pipeline. An extension would be to use different aggregation/averaging methods or to restrict the distance metrics to use only the N most important words used by the POIs (e.g. N=50, 200, 1000, ...).
+
+However, after spending a couple of hours parsing the emails, matching person and email names and aggregating the scores, I found that the `maildir/` only contains email from 20 persons out of 146 which form the data set. I found this disappointing, because the slides suggested to add more features and I believe the classification would benefit from these features, but there is simply not enough data.

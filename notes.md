@@ -634,3 +634,11 @@ Described tuned parameters.
 Explained metrics.
 
 Created literature listing.
+
+Submitted.
+
+### 2018-06-{16,17,19,20}
+
+Worked on extracting text features from email. Stopped after I found that there is not enough email data for persons in the data set while I was mapping person names to maildirs. Documented the findings.
+
+Extended report about the importance of hyper-parameter tuning. Clarified certain other aspects. Resubmitted.
